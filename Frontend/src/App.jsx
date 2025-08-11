@@ -43,9 +43,14 @@ function App() {
     }
   }, [token]);
 
+  // Poll every 5 seconds for latest notification
   useEffect(() => {
     if (!token) return;
-    const interval = setInterval(fetchNotification, 5000);
+
+    const interval = setInterval(() => {
+      fetchNotification();
+    }, 5000);
+
     return () => clearInterval(interval);
   }, [token]);
 
@@ -76,7 +81,10 @@ function App() {
   const fetchNotification = async () => {
     try {
       const response = await getLatestNotification();
+
+      // response should be like: { notification: { name, type, ... } }
       if (!response || !response.notification) return;
+
       setNotification(response.notification);
     } catch (error) {
       console.log('Error fetching notifications:', error);
@@ -93,16 +101,20 @@ function App() {
         text: 'All fields are required',
       });
     }
+
     try {
       const response = editData
         ? await updateEmployee(editData._id, { name, email, department }, token)
         : await addEmployee({ name, email, department }, token);
+
       if (![200, 201].includes(response.status)) throw new Error();
+
       Swal.fire({
         icon: 'success',
         title: 'Success',
         text: `Employee ${editData ? 'updated' : 'added'} successfully!`,
       });
+
       setForm({ name: '', email: '', department: '' });
       setEditData(null);
       fetchEmployees();
@@ -129,11 +141,13 @@ function App() {
     try {
       const response = await deleteEmployee(emp._id, token);
       if (response.status !== 200) throw new Error();
+
       Swal.fire({
         icon: 'success',
         title: 'Deleted',
         text: 'Employee deleted successfully!',
       });
+
       fetchEmployees();
       fetchStats();
     } catch (error) {
@@ -149,6 +163,7 @@ function App() {
     e.preventDefault();
     if (!searchId.trim()) return;
     setIsSearching(true);
+
     try {
       const response = await getEmployeeById(searchId.trim(), token);
       if (response.status !== 200) throw new Error();
@@ -183,229 +198,63 @@ function App() {
     }} />;
   }
 
-  const neonColors = {
-    primary: '#00fff7',
-    secondary: '#ff6f91',
-    background: '#0d1117',
-    card: '#161b22',
-    accent: '#39ff14',
-    alertBg: '#1a1f2b',
-  };
-
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: neonColors.background,
-        color: '#c9d1d9',
-        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        padding: '2rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
-        userSelect: 'none',
-      }}
-    >
-      {/* Header */}
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: `2px solid ${neonColors.primary}`,
-          paddingBottom: '1rem',
-          marginBottom: '1rem',
-        }}
-      >
-        <div style={{ fontWeight: '700', fontSize: '1.25rem' }}>
-          <span role="img" aria-label="user">👤</span> {user.name}
-        </div>
-        <button
-          onClick={handleLogout}
-          style={{
-            backgroundColor: 'transparent',
-            border: `2px solid ${neonColors.secondary}`,
-            color: neonColors.secondary,
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.backgroundColor = neonColors.secondary;
-            e.currentTarget.style.color = neonColors.background;
-            e.currentTarget.style.boxShadow = `0 0 10px ${neonColors.secondary}`;
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = neonColors.secondary;
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        >
-          Logout
-        </button>
-      </header>
+    <div className="py-5" style={{ minHeight: '100vh', backgroundColor: '#f4f7fa', padding: '48px' }}>
+      <div>
+        <span className="me-3 fw-bold">👤 {user.name}</span>
+        <button className="btn btn-outline-danger btn-sm" onClick={handleLogout}>Logout</button>
+      </div>
 
-      {/* Title */}
-      <h1
-        style={{
-          fontSize: '2.8rem',
-          fontWeight: '900',
-          color: neonColors.primary,
-          textAlign: 'center',
-          textShadow: `0 0 8px ${neonColors.primary}`,
-          marginBottom: '2rem',
-          userSelect: 'text',
-        }}
-      >
-        Employee Manager
-      </h1>
+      <div className="d-flex justify-content-center align-items-center mb-4">
+        <h1 className="text-center">Employee Manager</h1>
+      </div>
 
-      {/* Notification */}
       {notification && (
-        <div
-          style={{
-            backgroundColor: neonColors.alertBg,
-            borderRadius: '10px',
-            padding: '1rem',
-            color: neonColors.accent,
-            fontWeight: '700',
-            fontSize: '1rem',
-            boxShadow: `0 0 12px ${neonColors.accent}`,
-            marginBottom: '1rem',
-            userSelect: 'text',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.6rem',
-          }}
-          role="alert"
-        >
-          <span style={{fontSize: '1.3rem'}}>📢</span>
-          <span>
-            Admin notified:{' '}
-            {{
-              'employee:add': 'New Employee Added',
-              'employee:update': 'Employee Updated',
-              'employee:delete': 'Employee Deleted',
-            }[notification.type]} → <strong>{notification.name}</strong>
-          </span>
+        <div className="alert alert-info mt-3" role="alert">
+          📢 Admin notified: {' '}
+          {{
+            'employee:add': 'New Employee Added',
+            'employee:update': 'Employee Updated',
+            'employee:delete': 'Employee Deleted',
+          }[notification.type]} → <strong>{notification.name}</strong>
         </div>
       )}
 
-      {/* Employee Form */}
-      <div
-        style={{
-          backgroundColor: neonColors.card,
-          borderRadius: '12px',
-          padding: '1.5rem',
-          boxShadow: `0 0 15px ${neonColors.primary}`,
+      <EmployeeForm
+        form={form}
+        editData={editData}
+        handleChange={(e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+        handleSubmit={handleSubmit}
+        onCancel={() => {
+          setForm({ name: '', email: '', department: '' });
+          setEditData(null);
         }}
-      >
-        <EmployeeForm
-          form={form}
-          editData={editData}
-          handleChange={(e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))}
-          handleSubmit={handleSubmit}
-          onCancel={() => {
-            setForm({ name: '', email: '', department: '' });
-            setEditData(null);
-          }}
-          futuristic={true}
-          neonColors={neonColors}
-        />
-      </div>
+      />
 
-      {/* Search */}
-      <div
-        style={{
-          backgroundColor: neonColors.card,
-          borderRadius: '12px',
-          padding: '1rem',
-          boxShadow: `0 0 12px ${neonColors.secondary}`,
-          marginTop: '1rem',
-        }}
-      >
-        <EmployeeSearch
-          searchId={searchId}
-          onChange={(e) => setSearchId(e.target.value)}
-          onSearch={handleSearch}
-          onClear={clearSearch}
-          isSearching={isSearching}
-          neonColors={neonColors}
-        />
-      </div>
+      <EmployeeSearch
+        searchId={searchId}
+        onChange={(e) => setSearchId(e.target.value)}
+        onSearch={handleSearch}
+        onClear={clearSearch}
+        isSearching={isSearching}
+      />
 
-      {/* Employee Table */}
-      <div
-        style={{
-          backgroundColor: neonColors.card,
-          borderRadius: '12px',
-          padding: '1rem',
-          boxShadow: `0 0 18px ${neonColors.primary}`,
-          marginTop: '1.5rem',
-          overflowX: 'auto',
-        }}
-      >
-        <EmployeeTable
-          employees={employees}
-          handleEdit={handleEdit}
-          handleDelete={handleDelete}
-          neonColors={neonColors}
-        />
-      </div>
+      <EmployeeTable
+        employees={employees}
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
+      />
 
-      {/* Analytics */}
       {stats && (
-        <div
-          style={{
-            marginTop: '2rem',
-            backgroundColor: neonColors.card,
-            borderRadius: '12px',
-            padding: '1.5rem',
-            boxShadow: `0 0 15px ${neonColors.secondary}`,
-            userSelect: 'text',
-          }}
-        >
-          <h5
-            style={{
-              color: neonColors.secondary,
-              fontWeight: '700',
-              marginBottom: '1rem',
-              textShadow: `0 0 6px ${neonColors.secondary}`,
-            }}
-          >
-            📊 API Usage Analytics
-          </h5>
-          <ul
-            style={{
-              listStyle: 'none',
-              paddingLeft: 0,
-              color: '#adbac7',
-              fontSize: '1rem',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: '0.75rem',
-            }}
-          >
-            <li style={{ background: '#22272e', borderRadius: '8px', padding: '0.5rem 1rem', boxShadow: `0 0 6px ${neonColors.secondary}` }}>
-              Logins: {stats['analytics:logins']}
-            </li>
-            <li style={{ background: '#22272e', borderRadius: '8px', padding: '0.5rem 1rem', boxShadow: `0 0 6px ${neonColors.secondary}` }}>
-              Registrations: {stats['analytics:registers']}
-            </li>
-            <li style={{ background: '#22272e', borderRadius: '8px', padding: '0.5rem 1rem', boxShadow: `0 0 6px ${neonColors.secondary}` }}>
-              Fetched Employees: {stats['analytics:getEmployees']}
-            </li>
-            <li style={{ background: '#22272e', borderRadius: '8px', padding: '0.5rem 1rem', boxShadow: `0 0 6px ${neonColors.secondary}` }}>
-              Added Employees: {stats['analytics:addEmployee']}
-            </li>
-            <li style={{ background: '#22272e', borderRadius: '8px', padding: '0.5rem 1rem', boxShadow: `0 0 6px ${neonColors.secondary}` }}>
-              Updated Employees: {stats['analytics:updateEmployee']}
-            </li>
-            <li style={{ background: '#22272e', borderRadius: '8px', padding: '0.5rem 1rem', boxShadow: `0 0 6px ${neonColors.secondary}` }}>
-              Deleted Employees: {stats['analytics:deleteEmployee']}
-            </li>
+        <div className="mt-5">
+          <h5>📊 API Usage Analytics</h5>
+          <ul className="list-group">
+            <li className="list-group-item">Logins: {stats['analytics:logins']}</li>
+            <li className="list-group-item">Registrations: {stats['analytics:registers']}</li>
+            <li className="list-group-item">Fetched Employees: {stats['analytics:getEmployees']}</li>
+            <li className="list-group-item">Added Employees: {stats['analytics:addEmployee']}</li>
+            <li className="list-group-item">Updated Employees: {stats['analytics:updateEmployee']}</li>
+            <li className="list-group-item">Deleted Employees: {stats['analytics:deleteEmployee']}</li>
           </ul>
         </div>
       )}
