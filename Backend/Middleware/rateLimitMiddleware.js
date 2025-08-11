@@ -1,6 +1,6 @@
 import redisClient from '../utils/redisClient.js';
 
-export const rateLimiter = (limit = 300, windowInSeconds = 36) => {
+export const rateLimiter = (limit = 600, windowInSeconds = 36) => {
   return async (req, res, next) => {
     try {
       const ip = req.ip;

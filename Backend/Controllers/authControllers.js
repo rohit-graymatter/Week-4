@@ -61,7 +61,7 @@ export const loginUser = async (req, res) => {
     return res.status(200).json({ user: { id: user._id, name: user.name, email }, token });
 
   } catch (err) {
-    // ❌ On failed login — increment fail counter and set TTL
+    // On failed login — increment fail counter and set TTL
     await redisClient.incr(failKey);
     await redisClient.expire(failKey, LOCK_DURATION);
 

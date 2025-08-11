@@ -22,7 +22,7 @@ function App() {
   const [editData, setEditData] = useState(null);
   const [searchId, setSearchId] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [stats, setStats] = useState(null); // ✅ Analytics state
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -91,7 +91,7 @@ function App() {
       setForm({ name: '', email: '', department: '' });
       setEditData(null);
       fetchEmployees();
-      fetchStats(); // ✅ Refresh stats
+      fetchStats();
     } catch (error) {
       Swal.fire({
         icon: 'error',
@@ -155,7 +155,7 @@ function App() {
     setSearchId('');
     setIsSearching(false);
     fetchEmployees();
-    fetchStats(); // ✅ Refresh stats
+    fetchStats();
   };
 
   const handleLogout = () => {
@@ -206,7 +206,6 @@ function App() {
         handleDelete={handleDelete}
       />
 
-      {/* ✅ Analytics Section */}
       {stats && (
         <div className="mt-5">
           <h5>📊 API Usage Analytics</h5>

@@ -4,7 +4,7 @@ const EmployeeSearch = ({ searchId, onChange, onSearch, onClear, isSearching }) 
   <form onSubmit={onSearch} className="row g-2 mb-4 justify-content-center">
     <div className="col-auto">
       <input
-        type="text"  // change here
+        type="text"
         placeholder="Search by ID"
         value={searchId}
         onChange={onChange}

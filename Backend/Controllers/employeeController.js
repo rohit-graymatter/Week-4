@@ -5,14 +5,14 @@ export const getEmployees = async (req, res) => {
   try {
     const cached = await redisClient.get('employees:all');
     if (cached) {
-      await redisClient.incr('analytics:getEmployees'); // ✅ Analytics
+      await redisClient.incr('analytics:getEmployees'); // Analytics
       return res.status(200).json(JSON.parse(cached));
     }
 
     const employees = await Employee.find();
     await redisClient.set('employees:all', JSON.stringify(employees), { EX: 3600 });
 
-    await redisClient.incr('analytics:getEmployees'); // ✅ Analytics
+    await redisClient.incr('analytics:getEmployees'); // Analytics
     res.status(200).json(employees);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -30,9 +30,9 @@ export const addEmployee = async (req, res) => {
     await newEmployee.save();
 
     await redisClient.del('employees:all'); // invalidate cache
-    await redisClient.incr('analytics:addEmployee'); // ✅ Analytics
+    await redisClient.incr('analytics:addEmployee'); // Analytics
 
-    // ✅ Pub/Sub
+    // Pub/Sub
     await redisClient.publish('employee:add', JSON.stringify({ name, email, department }));
 
     res.status(201).json({ message: 'Employee added successfully!', employee: newEmployee });
@@ -57,7 +57,7 @@ export const updateEmployee = async (req, res) => {
     }
 
     await redisClient.del('employees:all'); // invalidate cache
-    await redisClient.incr('analytics:updateEmployee'); // ✅ Analytics
+    await redisClient.incr('analytics:updateEmployee'); // Analytics
 
     res.status(200).json({ message: 'Employee updated successfully', employee: updatedEmployee });
   } catch (err) {
@@ -75,7 +75,7 @@ export const deleteEmployee = async (req, res) => {
     }
 
     await redisClient.del('employees:all'); // invalidate cache
-    await redisClient.incr('analytics:deleteEmployee'); // ✅ Analytics
+    await redisClient.incr('analytics:deleteEmployee'); // Analytics
 
     res.status(200).json({ message: 'Employee deleted successfully' });
   } catch (err) {
