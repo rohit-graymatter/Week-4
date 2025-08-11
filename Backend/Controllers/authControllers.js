@@ -6,6 +6,9 @@ import redisClient from '../utils/redisClient.js';
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 const TOKEN_EXPIRY = 60 * 60 * 24; // 1 day in seconds
 
+const MAX_ATTEMPTS = 3;
+const LOCK_DURATION = 120; // in seconds
+
 export const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
   try {
@@ -18,8 +21,6 @@ export const registerUser = async (req, res) => {
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1d' });
 
     await redisClient.set(`session:${user._id}`, token, { EX: TOKEN_EXPIRY });
-
-    // ✅ Track register analytics
     await redisClient.incr('analytics:registers');
 
     res.status(201).json({ user: { id: user._id, name, email }, token });
@@ -30,22 +31,43 @@ export const registerUser = async (req, res) => {
 
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
+  const failKey = `login_fail:${email}`;
+
   try {
+    // Check if user is currently locked out
+    const attempts = await redisClient.get(failKey);
+
+    if (attempts && parseInt(attempts) >= MAX_ATTEMPTS) {
+      const ttl = await redisClient.ttl(failKey);
+      return res.status(429).json({
+        message: `Too many failed attempts. Please try again after ${ttl} seconds.`,
+        retryAfter: ttl
+      });
+    }
+
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!user) throw new Error(); // Treat as failed attempt
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!match) throw new Error(); // Treat as failed attempt
+
+    // ✅ Successful login — reset fail counter
+    await redisClient.del(failKey);
 
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1d' });
-
     await redisClient.set(`session:${user._id}`, token, { EX: TOKEN_EXPIRY });
-
-    // ✅ Track login analytics
     await redisClient.incr('analytics:logins');
 
-    res.status(200).json({ user: { id: user._id, name: user.name, email }, token });
+    return res.status(200).json({ user: { id: user._id, name: user.name, email }, token });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    // ❌ On failed login — increment fail counter and set TTL
+    await redisClient.incr(failKey);
+    await redisClient.expire(failKey, LOCK_DURATION);
+
+    const remaining = MAX_ATTEMPTS - (parseInt(await redisClient.get(failKey)) || 0);
+    return res.status(401).json({
+      message: `Invalid credentials.${remaining > 0 ? ` ${remaining} attempt(s) left.` : ''}`
+    });
   }
 };

@@ -15,15 +15,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Global Rate Limiting Middleware
-app.use(rateLimiter()); // If needed per route, move this into individual route files
+// Route-based Rate Limiting (Recommended)
+app.use('/api/employees', rateLimiter());
+app.use('/api/stats', rateLimiter());
 
 // Routes
-app.use('/api/auth', authRouter);         // Auth routes
-app.use('/api/employees', employeeRoute); // Employee CRUD (protected)
-app.use('/api/stats', statsRouter);       // Analytics data
+app.use('/api/auth', authRouter);         // Auth (NO global rate limiter)
+app.use('/api/employees', employeeRoute); // Employee CRUD
+app.use('/api/stats', statsRouter);       // Analytics
 
-// Root health check (optional)
+// Health check
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'API is running...' });
 });
