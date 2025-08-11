@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import employeeRoute from './Routes/employeeRoute.js';
 import { authRouter } from './Routes/authRoute.js';
 import statsRouter from './Routes/statsRoute.js';
+import notificationRouter from './Routes/notificationRoute.js'; // ✅ new import
 import { rateLimiter } from './Middleware/rateLimitMiddleware.js';
 
 dotenv.config();
@@ -20,9 +21,10 @@ app.use('/api/employees', rateLimiter());
 app.use('/api/stats', rateLimiter());
 
 // Routes
-app.use('/api/auth', authRouter);         // Auth (NO global rate limiter)
-app.use('/api/employees', employeeRoute); // Employee CRUD
-app.use('/api/stats', statsRouter);       // Analytics
+app.use('/api/auth', authRouter);              // Auth
+app.use('/api/employees', employeeRoute);      // Employee CRUD
+app.use('/api/stats', statsRouter);            // Analytics
+app.use('/api/notifications', notificationRouter); // ✅ Notifications (new)
 
 // Health check
 app.get('/', (req, res) => {

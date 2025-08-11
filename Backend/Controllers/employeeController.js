@@ -32,7 +32,7 @@ export const addEmployee = async (req, res) => {
     await redisClient.del('employees:all'); // invalidate cache
     await redisClient.incr('analytics:addEmployee'); // Analytics
 
-    // Pub/Sub
+    // Pub/Sub for add
     await redisClient.publish('employee:add', JSON.stringify({ name, email, department }));
 
     res.status(201).json({ message: 'Employee added successfully!', employee: newEmployee });
@@ -59,6 +59,14 @@ export const updateEmployee = async (req, res) => {
     await redisClient.del('employees:all'); // invalidate cache
     await redisClient.incr('analytics:updateEmployee'); // Analytics
 
+    // Pub/Sub for update
+    await redisClient.publish('employee:update', JSON.stringify({
+      name: updatedEmployee.name,
+      email: updatedEmployee.email,
+      department: updatedEmployee.department,
+      _id: updatedEmployee._id
+    }));
+
     res.status(200).json({ message: 'Employee updated successfully', employee: updatedEmployee });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -76,6 +84,14 @@ export const deleteEmployee = async (req, res) => {
 
     await redisClient.del('employees:all'); // invalidate cache
     await redisClient.incr('analytics:deleteEmployee'); // Analytics
+
+    // Pub/Sub for delete
+    await redisClient.publish('employee:delete', JSON.stringify({
+      name: deletedEmployee.name,
+      email: deletedEmployee.email,
+      department: deletedEmployee.department,
+      _id: deletedEmployee._id
+    }));
 
     res.status(200).json({ message: 'Employee deleted successfully' });
   } catch (err) {
