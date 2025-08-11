@@ -6,6 +6,7 @@ import {
   updateEmployee,
   deleteEmployee
 } from './services/employeeService.js';
+import { getStats } from './Services/statsService.js';
 import Swal from 'sweetalert2';
 
 import EmployeeForm from './components/EmployeeForm.jsx';
@@ -21,6 +22,7 @@ function App() {
   const [editData, setEditData] = useState(null);
   const [searchId, setSearchId] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [stats, setStats] = useState(null); // ✅ Analytics state
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -32,7 +34,10 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (token) fetchEmployees();
+    if (token) {
+      fetchEmployees();
+      fetchStats();
+    }
   }, [token]);
 
   const fetchEmployees = async () => {
@@ -47,6 +52,15 @@ function App() {
         title: 'Oops',
         text: error?.response?.data?.message || 'Something went wrong',
       });
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const response = await getStats(token);
+      setStats(response.data);
+    } catch (error) {
+      console.error('Failed to fetch analytics:', error);
     }
   };
 
@@ -77,6 +91,7 @@ function App() {
       setForm({ name: '', email: '', department: '' });
       setEditData(null);
       fetchEmployees();
+      fetchStats(); // ✅ Refresh stats
     } catch (error) {
       Swal.fire({
         icon: 'error',
@@ -107,6 +122,7 @@ function App() {
       });
 
       fetchEmployees();
+      fetchStats(); // ✅ Refresh stats
     } catch (error) {
       Swal.fire({
         icon: 'error',
@@ -139,6 +155,7 @@ function App() {
     setSearchId('');
     setIsSearching(false);
     fetchEmployees();
+    fetchStats(); // ✅ Refresh stats
   };
 
   const handleLogout = () => {
@@ -188,6 +205,21 @@ function App() {
         handleEdit={handleEdit}
         handleDelete={handleDelete}
       />
+
+      {/* ✅ Analytics Section */}
+      {stats && (
+        <div className="mt-5">
+          <h5>📊 API Usage Analytics</h5>
+          <ul className="list-group">
+            <li className="list-group-item">Logins: {stats['analytics:logins']}</li>
+            <li className="list-group-item">Registrations: {stats['analytics:registers']}</li>
+            <li className="list-group-item">Fetched Employees: {stats['analytics:getEmployees']}</li>
+            <li className="list-group-item">Added Employees: {stats['analytics:addEmployee']}</li>
+            <li className="list-group-item">Updated Employees: {stats['analytics:updateEmployee']}</li>
+            <li className="list-group-item">Deleted Employees: {stats['analytics:deleteEmployee']}</li>
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

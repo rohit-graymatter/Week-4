@@ -53,6 +53,12 @@ const AuthPage = ({ onLogin }) => {
     <div className="container" style={{ maxWidth: '400px', marginTop: '100px' }}>
       <h2 className="text-center mb-4">{isLogin ? 'Login' : 'Register'}</h2>
 
+      {isLogin && (
+        <p className="text-center text-muted mb-4" style={{ fontSize: '0.9rem' }}>
+          Only 3 login attempts allowed. After that, your account will be locked for 2 minutes.
+        </p>
+      )}
+
       <form onSubmit={handleSubmit}>
         {!isLogin && (
           <div className="mb-3">
